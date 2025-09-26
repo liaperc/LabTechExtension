@@ -1,0 +1,13 @@
+{
+    "manifest_version": 3,
+    "name": "BioExtension",
+    "version": "0.1.0",
+    "action": {
+        "default_popup": "popup/index.html"
+    },
+    "background":{
+        "service_worker": "service-worker.js"
+    },
+    "permissions": ["storage","tabs"],
+    "host_permissions": ["https://api.quartzy.com/*"]
+}
