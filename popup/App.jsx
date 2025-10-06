@@ -4,6 +4,24 @@ import './styles.css'
 
 function InitialPop(){
     const navigate = useNavigate();
+
+    const [token, setToken] = useState(null);
+    const [error, setError] = useState(null);
+
+    const getOAuthToken = () => {
+        chrome.identity.getAuthToken({ interactive: true }, (token) => {
+            if (chrome.runtime.lastError) {
+                setError(chrome.runtime.lastError.message);
+            } else {
+                setToken(token);
+                console.log("OAuth token:", token);
+            }
+        });
+    };
+
+
+
+
     return(
         //TODO: need to add more styling CSS later on
         <div>
@@ -19,6 +37,9 @@ function InitialPop(){
             <button className="button" onClick={() => navigate("/settings")}>
                 Settings
             </button>
+            {/* <button className="button" onClick={getOAuthToken}>
+                Test Google OAuth
+            </button> */}
             {/* TEST TO SHOW STORED API KEY */}
             {/* <button onClick={() => {
                 chrome.storage.local.get(['APIKey'], (result) => {
@@ -35,8 +56,14 @@ function Settings(){
     const navigate = useNavigate();
     return(
         <div>
-            <button className="button" onClick={changeAPI}>
+            <button className="button" onClick={() => changeStorage('Please enter your Quartzy API key.','APIKey')}>
                 Change API Key
+            </button>
+            <button className="button" onClick={() => changeStorage('Please enter your SpreadSheet ID. Example URL: \n https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit?gid=0#gid=0','SpreadSheetID')}>
+                Change SpreadSheet ID
+            </button>
+            <button className="button" onClick={() => changeStorage('Please enter the name of your specific sheet WITHIN the SpreadSheet.','SheetID')}>
+                Change Specific Sheet ID
             </button>
             <button className="button" onClick={() => navigate("/")}>
                 Back
@@ -45,12 +72,12 @@ function Settings(){
     )
 }
 
-function changeAPI(){
-    const APIKey = prompt("Enter your Quartzy API key:");
-    if (!APIKey) return;
-    if (APIKey) {
+function changeStorage(user_msg,name){
+    const value = prompt(user_msg);
+    if (!value) return;
+    if (value) {
         chrome.runtime.sendMessage(
-            {type: "SET_API_KEY",APIKey: APIKey},
+            {type: "SET_SOMETHING",item: value,name:name},
             (response) => {
                 if (response && response.message){
                     alert(response.message);
@@ -75,13 +102,30 @@ function getQuartzyOrders(){
 }
 //asynchronous, so we use await etc.
 async function showQuartzyOrders() {
+    let orders;
     try {
-        const orders = await getQuartzyOrders();
-        console.log("got orders:",orders);
-
+        orders = await getQuartzyOrders();
+        console.log("got orders:",orders);        
     } catch (e){
         alert("error fetching orders",e);
         console.error("error fetching orders",e);
+    }
+    try {
+        return new Promise((resolve) => {
+            chrome.runtime.sendMessage(
+                {type: "SEND_QUARTZY",data: orders},
+                (response) => {
+                    // TODO ADD SOMEKIND OF FEEDBACK IDK
+                    if (response && response.message){
+                        alert(response.message);
+                    }
+                    resolve(response.message);
+                }
+            );
+        });
+    }catch (e){
+        alert("error sending orders",e);
+        console.error("error sending orders",e);
     }
 }
 
