@@ -5,6 +5,8 @@ import './styles.css'
 function InitialPop(){
     const navigate = useNavigate();
 
+
+    //not in use
     const [token, setToken] = useState(null);
     const [error, setError] = useState(null);
 
@@ -19,19 +21,30 @@ function InitialPop(){
         });
     };
 
+    // TODO: This probably doesn't fully work yet, not sure if it'll change whenever it's loaded
+    const [POnum,setPOnum] = useState("")
+    useEffect(()=>{
+        chrome.local.storage.get(["PO"],(result)=>{
+            if (result.PO){
+                setPOnum(result.PO)
+            } 
+        })
 
-
+})
 
     return(
         //TODO: need to add more styling CSS later on
         <div>
             {/* TODO: set the screen to navigate to later */}
             {/* onClick={() => navigate("")} */}
+            <text>
+                {POnum}
+            </text>
             <button className="button">
                 {/* TODO: have the extension say the name of the page! */}
                 Scrape Page
             </button>
-            <button className="button" onClick={showQuartzyOrders}>
+            <button className="button" onClick={sendQuartzyOrders}>
                 Get Quartzy Orders
             </button>
             <button className="button" onClick={() => navigate("/settings")}>
@@ -52,6 +65,7 @@ function InitialPop(){
     );
 }
 
+// Page used for all user entered information
 function Settings(){
     const navigate = useNavigate();
     return(
@@ -65,6 +79,9 @@ function Settings(){
             <button className="button" onClick={() => changeStorage('Please enter the name of your specific sheet WITHIN the SpreadSheet.','SheetID')}>
                 Change Specific Sheet ID
             </button>
+            <button className="button" onClick={() => changeStorage('Set the current PO#','PO')}>
+                Set PO#
+            </button>
             <button className="button" onClick={() => navigate("/")}>
                 Back
             </button>
@@ -72,6 +89,8 @@ function Settings(){
     )
 }
 
+// takes message to prompt user and name of what to store the user input as, used for API storage (sheets and quartzy)
+// and some other stuff
 function changeStorage(user_msg,name){
     const value = prompt(user_msg);
     if (!value) return;
@@ -86,6 +105,7 @@ function changeStorage(user_msg,name){
         );
     }
 }
+// calls service worker to use Quartzy API
 function getQuartzyOrders(){
     return new Promise((resolve) => {
         chrome.runtime.sendMessage(
@@ -101,7 +121,8 @@ function getQuartzyOrders(){
     });
 }
 //asynchronous, so we use await etc.
-async function showQuartzyOrders() {
+// sends orders to sheets  (uses getQuartzyOrders)
+async function sendQuartzyOrders() {
     let orders;
     try {
         orders = await getQuartzyOrders();

@@ -1,9 +1,8 @@
-// import { send } from "vite";
-
 chrome.tabs.onCreated.addListener((tab) =>{
     console.log("New tab!",tab)
 });
 
+// Opens the extension automatically when on the order page of recognized URLs
 chrome.tabs.onUpdated.addListener((tabId,changeInfo,tab) => {
     console.log("worked")
     //we want to see if the tab has been properly loaded, of course
@@ -24,9 +23,10 @@ chrome.tabs.onUpdated.addListener((tabId,changeInfo,tab) => {
         }
     };
 });
+
 //request is the actual content of the message
 chrome.runtime.onMessage.addListener((request,sender,sendResponse) => {
-    // HANDLING API KEY SETTING
+    // HANDLING ALL STORAGE
     if (request.type === "SET_SOMETHING"){
         //2nd arg is a callback function once stored
         let name = request.name
@@ -38,6 +38,7 @@ chrome.runtime.onMessage.addListener((request,sender,sendResponse) => {
         return true;
     }
 
+    // HANDLING CALLING QUARTZY API
     if (request.type === "FETCH_QUARTZY"){
         chrome.storage.local.get(['APIKey'], (result) =>{
             //getting order data
@@ -61,13 +62,15 @@ chrome.runtime.onMessage.addListener((request,sender,sendResponse) => {
         });
         return true;
     }
+
+    // HANDLING SENDING QUARTZY DATA TO SHEETS
     if (request.type === "SEND_QUARTZY"){
         QuartzyToSheet(request.data)
             .then(() => {
                 sendResponse({message: "Orders uploaded!"})
             })
             .catch((err) => {
-                console.error(e);
+                console.error(err);
                 sendResponse({ message: e.message});
             });
         return true;
@@ -75,7 +78,9 @@ chrome.runtime.onMessage.addListener((request,sender,sendResponse) => {
 });
 
 
-
+// Authenticates user, sends inputted data to a google sheet (also given by the user)
+// theoretically can send anything to sheets as long as its a JSON array of arrays
+// and the sub array contains the desired elements
 async function QuartzyToSheet(orderData){
     const authToken = await new Promise((resolve,reject) => {
         chrome.identity.getAuthToken({ interactive: true }, function(authToken) {
@@ -94,7 +99,7 @@ async function QuartzyToSheet(orderData){
     const range = `${SHEET_NAME}!A1`
 
     const rows = orderData.map(order => [
-        // THIS IS WHERE WE DECIDE THE FORMATTING ORDER
+        // THIS IS WHERE WE DECIDE THE FORMATTING OF DATA ENTRY
         order.item_name,
         order.vendor_name,
         order.catalog_number,
@@ -104,7 +109,7 @@ async function QuartzyToSheet(orderData){
             ? (parseFloat(order.total_price.amount) / 100).toFixed(2)
             : "",
         order.created_by ? order.created_by.email : "",
-        // CHANGE THIS TO BE ACCURATE
+        // CHANGE THIS TO BE ACCURATE TO THE DESIRED PO#
         order.purchase_order_number || "",
     ]);
 
@@ -112,6 +117,8 @@ async function QuartzyToSheet(orderData){
         values: rows
     };
 
+    // CALLING SHEETS API
+    // https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets.values/append#authorization-scopes
     const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED`,
         {
