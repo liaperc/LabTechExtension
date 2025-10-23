@@ -7,7 +7,7 @@ function InitialPop(){
 
 
     //not in use
-    const [token, setToken] = useState(null);
+    const [token, setToken] = useState(null); 
     const [error, setError] = useState(null);
 
     const getOAuthToken = () => {
@@ -24,13 +24,13 @@ function InitialPop(){
     // TODO: This probably doesn't fully work yet, not sure if it'll change whenever it's loaded
     const [POnum,setPOnum] = useState("")
     useEffect(()=>{
-        chrome.local.storage.get(["PO"],(result)=>{
+        chrome.storage.local.get(["PO"],(result)=>{
             if (result.PO){
                 setPOnum(result.PO)
             } 
         })
 
-})
+    })
 
     return(
         //TODO: need to add more styling CSS later on

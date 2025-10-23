@@ -52,6 +52,7 @@ chrome.runtime.onMessage.addListener((request,sender,sendResponse) => {
             })
                 .then(response => {return response.json()})
                 .then(data => {
+                    (!data || data.error) ? console.error("Error fetching Quartzy data:", data.error) :
                     console.log("Full Quartzy API response:", data);
                     //trimming order data
                     const receivedOrders = data.filter(order => order.status === "RECEIVED");
