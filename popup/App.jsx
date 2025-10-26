@@ -139,7 +139,7 @@ async function sendQuartzyOrders() {
                     // TODO ADD SOMEKIND OF FEEDBACK IDK
                     if (response && response.message){
                         alert(response.message);
-                    }
+                    } 
                     resolve(response.message);
                 }
             );

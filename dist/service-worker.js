@@ -50,14 +50,22 @@ chrome.runtime.onMessage.addListener((request,sender,sendResponse) => {
                     'Access-Token': result.APIKey 
                 }
             })
-                .then(response => {return response.json()})
+                .then(response => {
+                    if (!response.ok){
+                        throw new Error("Error fetching Quartzy data:", response.error)
+                    }
+                    return response.json()})
                 .then(data => {
-                    (!data || data.error) ? console.error("Error fetching Quartzy data:", data.error) :
+                    
                     console.log("Full Quartzy API response:", data);
                     //trimming order data
                     const receivedOrders = data.filter(order => order.status === "RECEIVED");
                     console.log(receivedOrders)
                     sendResponse({'orderData': receivedOrders});
+                })
+                .catch((err) => {
+                    console.error(err);
+
                 });
 
         });
@@ -72,7 +80,7 @@ chrome.runtime.onMessage.addListener((request,sender,sendResponse) => {
             })
             .catch((err) => {
                 console.error(err);
-                sendResponse({ message: e.message});
+                sendResponse({ message: err.message});
             });
         return true;
     }
