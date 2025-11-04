@@ -37,9 +37,9 @@ function InitialPop(){
         <div>
             {/* TODO: set the screen to navigate to later */}
             {/* onClick={() => navigate("")} */}
-            <text>
+            {/* <text>
                 {POnum}
-            </text>
+            </text> */}
             <button className="button">
                 {/* TODO: have the extension say the name of the page! */}
                 Scrape Page
@@ -68,19 +68,99 @@ function InitialPop(){
 // Page used for all user entered information
 function Settings(){
     const navigate = useNavigate();
+    const [POnum,setPOnum] = useState("")
+    const [apiKey, setApiKey] = useState("")
+    const [spreadSheetID, setSpreadSheetID] = useState("")
+    const [sheetID, setSheetID] = useState("")
+    
+    useEffect(()=>{
+        chrome.storage.local.get(["PO", "APIKey", "SpreadSheetID", "SheetID"],(result)=>{
+            if (result.PO){
+                setPOnum(result.PO)
+            }
+            if (result.APIKey){
+                setApiKey(result.APIKey)
+            }
+            if (result.SpreadSheetID){
+                setSpreadSheetID(result.SpreadSheetID)
+            }
+            if (result.SheetID){
+                setSheetID(result.SheetID)
+            }
+        })
+    }, [])
+    
+    const hasApiKey = apiKey && apiKey.length > 5;
+    const hasSpreadSheetID = spreadSheetID && spreadSheetID.length > 5;
+    const hasSheetID = sheetID && sheetID.length > 0;
+    const hasPOnum = POnum && POnum.length > 0;
+    
+    // Function to handle storage changes and update local state
+    const handleStorageChange = (user_msg, name) => {
+        let value = prompt(user_msg);
+        if (!value) {return} else if (name === "SpreadSheetID"){
+            const trimmedInput = value.trim();
+            let spreadsheetId;
+            
+            // Extract spreadsheet ID
+            if (trimmedInput.includes('docs.google.com/spreadsheets')) {
+                const match = trimmedInput.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                spreadsheetId = match ? match[1] : null;
+            } else if (trimmedInput.match(/^[a-zA-Z0-9_-]+$/)) {
+                spreadsheetId = trimmedInput;
+            }
+            if (!spreadsheetId) {
+                (alert("invalid spreadhseet ID or Link")); 
+                return
+            } else {value = spreadsheetId};
+
+        };
+        
+        chrome.runtime.sendMessage(
+            {type: "SET_SOMETHING", item: value, name: name},
+            (response) => {
+                if (response && response.message) {
+                    alert(response.message);
+                    // Update local state after successful storage
+                    if (name === 'APIKey') {
+                        setApiKey(value);
+                    } else if (name === 'PO') {
+                        setPOnum(value);
+                    } else if (name === "SpreadSheetID"){
+                        setSpreadSheetID(value)
+                    } else if (name === "SheetID"){
+                        setSheetID(value)
+                    }
+                }
+            }
+        );
+    };
+    
     return(
         <div>
-            <button className="button" onClick={() => changeStorage('Please enter your Quartzy API key.','APIKey')}>
-                Change API Key
+            <button 
+                className={`button ${hasApiKey ? 'button-done' : ''}`}
+                onClick={() => handleStorageChange('Please enter your Quartzy API key.','APIKey')}
+            >
+                Change API Key {hasApiKey ? "(done)" : ""}
             </button>
-            <button className="button" onClick={() => changeStorage('Please enter your SpreadSheet ID. Example URL: \n https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit?gid=0#gid=0','SpreadSheetID')}>
-                Change SpreadSheet ID
+            <button 
+                className={`button ${hasSpreadSheetID ? 'button-done' : ''}`}
+                onClick={() => handleStorageChange('Please enter your SpreadSheet URL. Example URL: \n https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit?gid=0#gid=0','SpreadSheetID')}
+            >
+                Change SpreadSheet ID {hasSpreadSheetID ? "(done)" : ""}
             </button>
-            <button className="button" onClick={() => changeStorage('Please enter the name of your specific sheet WITHIN the SpreadSheet.','SheetID')}>
-                Change Specific Sheet ID
+            <button 
+                className={`button ${hasSheetID ? 'button-done' : ''}`}
+                onClick={() => handleStorageChange('Please enter the name of your specific sheet WITHIN the SpreadSheet. e.g. Sheet1 ','SheetID')}
+            >
+                Change Specific Sheet ID {hasSheetID ? "(done)" : ""}
             </button>
-            <button className="button" onClick={() => changeStorage('Set the current PO#','PO')}>
-                Set PO#
+            <button 
+                className={`button ${hasPOnum ? 'button-done' : ''}`}
+                onClick={() => handleStorageChange('Set the current PO#','PO')}
+            >
+                Set PO# {hasPOnum ? "(done)" : ""}
             </button>
             <button className="button" onClick={() => navigate("/")}>
                 Back

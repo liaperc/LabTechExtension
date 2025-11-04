@@ -31,7 +31,7 @@ chrome.runtime.onMessage.addListener((request,sender,sendResponse) => {
         //2nd arg is a callback function once stored
         let name = request.name
         chrome.storage.local.set({[name]: request.item}, () => {
-            console.log("API key stored.")
+            console.log(`${name} stored.`)
             sendResponse({message: `${name} stored successfully!`})
         });
         //need this to keep the connection open??
@@ -65,7 +65,7 @@ chrome.runtime.onMessage.addListener((request,sender,sendResponse) => {
                 })
                 .catch((err) => {
                     console.error(err);
-
+                    sendResponse({ message: err.message});
                 });
 
         });
