@@ -1,3 +1,49 @@
+async function checkWebsiteWithAI(url){
+    const { geminiApiKey } = await chrome.storage.local.get(['geminiApiKey']);
+    
+    if (!geminiApiKey) {
+        // console.log("No GeminiAPI key found");
+        return false;
+    }
+
+    try {
+        const response = await fetch(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+            {
+                method: "POST",
+                headers: {
+                    "x-goog-api-key": geminiApiKey,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    contents: [
+                        {
+                            parts: [
+                                {
+                                    text: `Is this URL for ordering biology or chemistry materials/supplies? Examples include: Quartzy (app.quartzy.com with requests?status[]=PENDING), Flinn Scientific, Fisher Scientific, Sigma-Aldrich. Answer ONLY with the word 'true' or 'false', nothing else. URL: ${url}`
+                                }
+                            ]
+                        }
+                    ]
+                })
+            }
+        );
+
+        const data = await response.json();
+        console.log("Full API response:", data);
+        
+        const result = data.candidates[0].content.parts[0].text.toLowerCase().trim();
+        const decision = result.includes('true');
+        
+        console.log(`AI check for ${url}: ${decision}`);
+        return decision;
+    } catch (error) {
+        console.error("Error using Gemini API:", error);
+        return false;
+    }
+}
+
+
 chrome.tabs.onCreated.addListener((tab) =>{
     console.log("New tab!",tab)
 });
@@ -18,7 +64,19 @@ chrome.tabs.onUpdated.addListener((tabId,changeInfo,tab) => {
             chrome.action.openPopup()
                 .then(() => console.log("popup opened!"))
                 .catch(err => console.error("ERROR:",err))
-        } else if (false){ //TODO: add FLINN!!
+        } else { //TODO: add FLINN!!
+            checkWebsiteWithAI(tab.url)
+            .then (response => {
+                if (typeof response !== Boolean){
+                    return false
+                } else {
+                    return true
+                }
+            }).then(response => {
+                if (response){
+                    chrome.action.openPopup()
+                } 
+            }).catch(err => console.error("ERROR:",err))
 
         }
     };

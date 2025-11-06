@@ -72,6 +72,7 @@ function Settings(){
     const [apiKey, setApiKey] = useState("")
     const [spreadSheetID, setSpreadSheetID] = useState("")
     const [sheetID, setSheetID] = useState("")
+    const [geminiKey, setGeminiKey] = useState('');
     
     useEffect(()=>{
         chrome.storage.local.get(["PO", "APIKey", "SpreadSheetID", "SheetID"],(result)=>{
@@ -87,6 +88,9 @@ function Settings(){
             if (result.SheetID){
                 setSheetID(result.SheetID)
             }
+            if (result.geminiApiKey){
+                setGeminiKey(result.geminiApiKey)
+            }
         })
     }, [])
     
@@ -94,7 +98,7 @@ function Settings(){
     const hasSpreadSheetID = spreadSheetID && spreadSheetID.length > 5;
     const hasSheetID = sheetID && sheetID.length > 0;
     const hasPOnum = POnum && POnum.length > 0;
-    
+    const hasGeminiApiKey = geminiKey && geminiKey.length > 0;
     // Function to handle storage changes and update local state
     const handleStorageChange = (user_msg, name) => {
         let value = prompt(user_msg);
@@ -130,6 +134,8 @@ function Settings(){
                         setSpreadSheetID(value)
                     } else if (name === "SheetID"){
                         setSheetID(value)
+                    } else if (name === "geminiApiKey"){
+                        setGeminiKey(value)
                     }
                 }
             }
@@ -161,6 +167,12 @@ function Settings(){
                 onClick={() => handleStorageChange('Set the current PO#','PO')}
             >
                 Set PO# {hasPOnum ? "(done)" : ""}
+            </button>
+            <button 
+                className={`button ${hasGeminiApiKey ? 'button-done' : ''}`}
+                onClick={() => handleStorageChange('Enter your Gemini API key (can be gotten for free at https://aistudio.google.com/apikey','geminiApiKey')}
+            >
+                OPTIONAL Set Gemini API Key {hasGeminiApiKey ? "(done)" : ""}
             </button>
             <button className="button" onClick={() => navigate("/")}>
                 Back
